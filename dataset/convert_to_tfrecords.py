@@ -52,4 +52,38 @@ def convert(f, record_name, mean_flag):
             mean += modality1
         
         label = cv2.imread(name[1], cv2.IMREAD_ANYCOLOR)
-        tr
+        try:
+            assert len(label.shape)==2
+        except AssertionError, e:
+            raise( AssertionError( "Label should be one channel!" ) )
+            
+        height = modality1.shape[0]
+        width = modality1.shape[1]
+        modality1 = modality1.tostring()
+        label = label.tostring()
+        features = {'height':_int64_feature(height),
+                    'width':_int64_feature(width),
+                    'modality1':_bytes_feature(modality1),
+                    'label':_bytes_feature(label),
+                   }
+        example = tf.train.Example(features=tf.train.Features(feature=features))
+        writer.write(example.SerializeToString())
+
+        if (count+1)%1 == 0:
+            print 'Processed data: {}'.format(count)
+
+        count = count+1
+
+    if mean_flag:
+        mean = mean/count
+        np.save(record_name.split('.')[0]+'.npy', mean)
+
+def main():
+    args = PARSER.parse_args()
+    if args.file:
+        file_list = decode(args.file)
+    else:
+        print '--file file_address missing'
+        return
+    if args.record:
+        
