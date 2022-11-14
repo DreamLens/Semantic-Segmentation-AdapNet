@@ -19,4 +19,34 @@
 import numpy as np
 import tensorflow as tf
 
-def get_train_batch(
+def get_train_batch(config):
+    filenames = [config['train_data']]
+    dataset = tf.data.TFRecordDataset(filenames)
+    dataset = dataset.map(lambda x: parser(x, config['num_classes']))
+    dataset = dataset.shuffle(buffer_size=100)
+    dataset = dataset.batch(config['batch_size'])
+    dataset = dataset.repeat(100)
+    dataset = dataset.prefetch(1)
+    iterator = dataset.make_one_shot_iterator()
+    return iterator
+
+def get_train_data(config):
+    iterator = get_train_batch(config)
+    dataA, label = iterator.get_next()
+    return [dataA, label], iterator
+
+def get_test_data(config):
+    iterator = get_test_batch(config)
+    dataA, label = iterator.get_next()
+    return [dataA, label], iterator
+
+def get_test_batch(config):
+    filenames = [config['test_data']]
+    dataset = tf.data.TFRecordDataset(filenames)
+    dataset = dataset.map(lambda x: parser(x, config['num_classes']))
+    dataset = dataset.batch(config['batch_size'])
+    iterator = dataset.make_initializable_iterator()
+    return iterator
+
+def compute_output_matrix(label_max, pred_max, output_matrix):
+    for i in xr
