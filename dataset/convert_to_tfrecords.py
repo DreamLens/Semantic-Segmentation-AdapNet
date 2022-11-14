@@ -86,4 +86,14 @@ def main():
         print '--file file_address missing'
         return
     if args.record:
-        
+        record_name = args.record
+    else:
+        print '--record tfrecord name missing'
+        return
+    mean_flag = False
+    if args.record:
+        mean_flag = args.mean
+    convert(file_list, record_name, mean_flag)
+
+if __name__ == '__main__':
+    main()
