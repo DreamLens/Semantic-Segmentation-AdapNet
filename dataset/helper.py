@@ -49,4 +49,29 @@ def get_test_batch(config):
     return iterator
 
 def compute_output_matrix(label_max, pred_max, output_matrix):
-    for i in xr
+    for i in xrange(output_matrix.shape[0]):
+        temp = pred_max == i
+        temp_l = label_max == i
+        tp = np.logical_and(temp, temp_l)
+        temp[temp_l] = True
+        fp = np.logical_xor(temp, temp_l)
+        temp = pred_max == i
+        temp[fp] = False
+        fn = np.logical_xor(temp, temp_l)
+        output_matrix[i, 0] += np.sum(tp)
+        output_matrix[i, 1] += np.sum(fp)
+        output_matrix[i, 2] += np.sum(fn)
+
+    return output_matrix
+
+def compute_iou(output_matrix):
+    return np.sum(output_matrix[1:, 0]/(np.sum(output_matrix[1:, :], 1).astype(np.float32)+1e-10))/(output_matrix.shape[0]-1)*100
+
+def parser(proto_data, num_classes):
+
+    features = {'height':tf.FixedLenFeature((), tf.int64, default_value=0),
+                'width':tf.FixedLenFeature((), tf.int64, default_value=0),
+                'modality1':tf.FixedLenFeature((), tf.string, default_value=""),
+                'label':tf.FixedLenFeature((), tf.string, default_value="")
+               }
+    parsed_features = tf.parse_single_e
