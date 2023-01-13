@@ -39,3 +39,30 @@ def test_func(config):
         model = model_func(num_classes=config['num_classes'], training=False)
         images_pl = tf.placeholder(tf.float32, [None, config['height'], config['width'], 3])
         model.build_graph(images_pl)
+
+    config1 = tf.ConfigProto()
+    config1.gpu_options.allow_growth = True
+    sess = tf.Session(config=config1)
+    sess.run(tf.global_variables_initializer())
+    import_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    print 'total_variables_loaded:', len(import_variables)
+    mean = np.load(config['mean'])
+    saver = tf.train.Saver(import_variables)
+    saver.restore(sess, config['checkpoint'])
+    sess.run(iterator.initializer)
+    step = 0
+    total_num = 0
+    output_matrix = np.zeros([config['num_classes'], 3])
+    while 1:
+        try:
+            img, label = sess.run([data_list[0], data_list[1]])
+            img = img - mean
+
+            feed_dict = {images_pl : img}
+            probabilities = sess.run([model.softmax], feed_dict=feed_dict)
+            prediction = np.argmax(probabilities[0], 3)
+            gt = np.argmax(label, 3)
+            prediction[gt == 0] = 0
+            output_matrix = compute_output_matrix(gt, prediction, output_matrix)
+            total_num += label.shape[0]
+            if (step+1) % co
