@@ -80,4 +80,27 @@ class AdapNet(network_base.Network):
             self.m_b4_out = self.unit_v4(self.m_b4_out, self.filters[3], 4, unit_index+1, dropout=dropout)
 
         ##skip
- 
+        self.skip = self.conv_batchN_relu(self.m_b2_out, 1, 1, self.num_classes*2, name='conv2', relu=False)
+
+        ##before upsample     	        
+        self.out = self.conv_batchN_relu(self.m_b4_out, 1, 1, self.num_classes, name='conv3', relu=False)
+
+        ### Upsample/Decoder
+        with tf.variable_scope('conv4'):
+            self.deconv_up1 = self.tconv2d(self.out, 4, self.num_classes*2, 2)
+            self.deconv_up1 = self.batch_norm(self.deconv_up1)
+            self.up1 = tf.add(self.deconv_up1, self.skip)
+
+        with tf.variable_scope('conv5'):
+            self.deconv_up3 = self.tconv2d(self.up1, 16, self.num_classes, 8)
+            self.deconv_up3 = self.batch_norm(self.deconv_up3)
+
+        self.softmax = tf.nn.softmax(self.deconv_up3)
+
+    def _create_loss(self, label):
+        self.loss = tf.reduce_mean(-tf.reduce_sum(tf.multiply(label*tf.log(self.softmax+1e-10),
+                                                              self.weights), axis=[3]))
+
+    def create_optimizer(self):
+        self.lr = tf.train.polynomial_decay(self.learning_rate, self.global_step,
+           
