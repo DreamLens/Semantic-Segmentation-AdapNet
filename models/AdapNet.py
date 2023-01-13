@@ -103,4 +103,23 @@ class AdapNet(network_base.Network):
 
     def create_optimizer(self):
         self.lr = tf.train.polynomial_decay(self.learning_rate, self.global_step,
-           
+                                            self.decay_steps, power=self.power)
+        self.train_op = tf.train.AdamOptimizer(self.lr).minimize(self.loss, global_step=self.global_step)
+
+    def _create_summaries(self):
+        with tf.name_scope("summaries"):
+            tf.summary.scalar("loss", self.loss)
+            tf.summary.histogram("histogram_loss", self.loss)
+            self.summary_op = tf.summary.merge_all()
+
+    def build_graph(self, data, label=None):
+        self._setup(data)
+
+        if self.training:
+            self._create_loss(label)
+
+def main():
+    print 'Do Nothing'
+
+if __name__ == '__main__':
+    main()
