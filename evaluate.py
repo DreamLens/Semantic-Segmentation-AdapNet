@@ -65,4 +65,25 @@ def test_func(config):
             prediction[gt == 0] = 0
             output_matrix = compute_output_matrix(gt, prediction, output_matrix)
             total_num += label.shape[0]
-            if (step+1) % co
+            if (step+1) % config['skip_step'] == 0:
+                print '%s %s] %d. iou updating' \
+                  % (str(datetime.datetime.now()), str(os.getpid()), total_num)
+                print 'mIoU: ', compute_iou(output_matrix)
+
+            step += 1
+
+        except tf.errors.OutOfRangeError:
+            print 'mIoU: ', compute_iou(output_matrix), 'total_data: ', total_num
+            break
+
+def main():
+    args = PARSER.parse_args()
+    if args.config:
+        file_address = open(args.config)
+        config = yaml.load(file_address)
+    else:
+        print '--config config_file_address missing'
+    test_func(config)
+
+if __name__ == '__main__':
+    main()
