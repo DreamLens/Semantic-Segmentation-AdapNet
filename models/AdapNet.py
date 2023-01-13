@@ -34,4 +34,30 @@ class AdapNet(network_base.Network):
         self.decay_steps = decay_steps
         self.training = training
         self.bn_decay_ = 0.99
-        self.resi
+        self.residual_units = [3, 4, 6, 3]
+        self.filters = [256, 512, 1024, 2048]
+        self.strides = [1, 2, 2, 1]
+        self.global_step = global_step
+        if self.training:
+            self.keep_prob = 0.3
+        else:
+            self.keep_prob = 1.0
+        if ignore_label:
+            self.weights = tf.ones(self.num_classes-1)
+            self.weights = tf.concat((tf.zeros(1), self.weights), 0)
+        else:
+            self.weights = tf.ones(self.num_classes)
+
+    def _setup(self, data):
+        self.input_shape = data.get_shape()
+        self.conv_3x3_out = self.conv_batchN_relu(data, 3, 1, 3, name='conv0')
+        self.conv_7x7_out = self.conv_batchN_relu(self.conv_3x3_out, 7, 2, 64, name='conv1')
+        self.max_pool_out = self.pool(self.conv_7x7_out, 3, 2)
+
+        ##block1
+        self.m_b1_out = self.unit_v1(self.max_pool_out, self.filters[0], 1, 1, 1, shortcut=True)
+        for unit_index in range(1, self.residual_units[0]):
+            self.m_b1_out = self.unit_v1(self.m_b1_out, self.filters[0], 1, 1, unit_index+1)
+
+        ##block2
+        self.m_b2_out = self.
