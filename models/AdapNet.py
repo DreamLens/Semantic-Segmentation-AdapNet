@@ -60,4 +60,24 @@ class AdapNet(network_base.Network):
             self.m_b1_out = self.unit_v1(self.m_b1_out, self.filters[0], 1, 1, unit_index+1)
 
         ##block2
-        self.m_b2_out = self.
+        self.m_b2_out = self.unit_v1(self.m_b1_out, self.filters[1], self.strides[1], 2, 1, shortcut=True)
+        for unit_index in range(1, self.residual_units[1]-1):
+            self.m_b2_out = self.unit_v1(self.m_b2_out, self.filters[1], 1, 2, unit_index+1)
+        self.m_b2_out = self.unit_v3(self.m_b2_out, self.filters[1], 2, self.residual_units[1])
+
+        ##block3
+        self.m_b3_out = self.unit_v1(self.m_b2_out, self.filters[2], self.strides[2], 3, 1, shortcut=True)
+        self.m_b3_out = self.unit_v1(self.m_b3_out, self.filters[2], 1, 3, 2)
+        for unit_index in range(2, self.residual_units[2]):
+            self.m_b3_out = self.unit_v3(self.m_b3_out, self.filters[2], 3, unit_index+1)
+
+        ##block4
+        self.m_b4_out = self.unit_v4(self.m_b3_out, self.filters[3], 4, 1, shortcut=True)
+        for unit_index in range(1, self.residual_units[3]):
+            dropout = False
+            if unit_index == 2:
+               dropout = True
+            self.m_b4_out = self.unit_v4(self.m_b4_out, self.filters[3], 4, unit_index+1, dropout=dropout)
+
+        ##skip
+ 
